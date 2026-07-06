@@ -1,0 +1,2324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, viewport-fit=cover" />
+<title>Expense Tracker — Personal Finance</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg-main: #121214;       /* Dark Gray background */
+    --bg-card: #1c1c1f;       /* Lighter Dark Gray for cards */
+    --bg-card-hover: #252529; /* Hover state for cards */
+    --border: rgba(255, 255, 255, 0.08);
+    --border-hover: rgba(255, 255, 255, 0.16);
+    
+    --text-primary: #ffffff;  /* White for primary text */
+    --text-secondary: #a1a1aa;/* Light Gray for secondary text */
+    --text-dim: #71717a;      /* Zinc-500 for muted elements */
+    
+    --accent: #10b981;        /* Emerald Green */
+    --accent-glow: rgba(16, 185, 129, 0.15);
+    
+    --mint: #10b981;          /* Emerald Green */
+    --mint-glow: rgba(16, 185, 129, 0.12);
+    
+    --coral: #ef4444;         /* Red for expenses */
+    --coral-glow: rgba(239, 68, 68, 0.12);
+    
+    --radius-lg: 16px;
+    --radius-md: 10px;
+    --radius-sm: 6px;
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  * {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+  }
+  
+  body {
+    background-color: var(--bg-main);
+    color: var(--text-primary);
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 13px; /* Compact font size */
+    overflow-x: hidden;
+    min-height: 100vh;
+  }
+  
+  .mono {
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+  }
+
+  /* BACKGROUND GLOWS */
+  .glow-bg {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    overflow: hidden;
+    pointer-events: none;
+  }
+  .glow-sphere {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(120px);
+    opacity: 0.14;
+    mix-blend-mode: screen;
+  }
+  .glow-1 {
+    width: 45vw;
+    height: 45vw;
+    background: radial-gradient(circle, var(--accent) 0%, transparent 70%);
+    top: -15vw;
+    left: -15vw;
+    animation: float-1 25s ease-in-out infinite alternate;
+  }
+  .glow-2 {
+    width: 50vw;
+    height: 50vw;
+    background: radial-gradient(circle, #059669 0%, transparent 70%);
+    bottom: -20vw;
+    right: -15vw;
+    animation: float-2 30s ease-in-out infinite alternate;
+  }
+  @keyframes float-1 {
+    0% { transform: translate(0, 0) scale(1); }
+    100% { transform: translate(8vw, 6vw) scale(1.1); }
+  }
+  @keyframes float-2 {
+    0% { transform: translate(0, 0) scale(1); }
+    100% { transform: translate(-6vw, -8vw) scale(1.05); }
+  }
+
+  /* APP LAYOUT */
+  #app {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    width: 100%;
+  }
+
+  /* COLLAPSIBLE SIDEBAR MENU & BACKDROP */
+  .sidebar-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    z-index: 140;
+    display: none;
+  }
+  .sidebar-backdrop.show {
+    display: block;
+  }
+
+  .sidebar-aside {
+    display: flex;
+    flex-direction: column;
+    width: 230px; /* Compact width */
+    background: #18181b; /* Solid dark gray */
+    border-right: 1px solid var(--border);
+    padding: 24px 18px;
+    z-index: 150;
+  }
+  
+  /* Mobile Sidebar behavior */
+  @media (max-width: 767px) {
+    .sidebar-aside {
+      position: fixed;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      transform: translateX(-100%);
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .sidebar-aside.open {
+      transform: translateX(0);
+    }
+  }
+
+  .sidebar-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 30px;
+  }
+  .sidebar-brand .mark {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px var(--accent-glow);
+  }
+  .sidebar-brand .mark svg {
+    width: 18px;
+    height: 18px;
+  }
+  .sidebar-brand h2 {
+    font-size: 17px;
+    font-weight: 800;
+    margin: 0;
+    letter-spacing: -0.02em;
+  }
+  .sidebar-user {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    margin-bottom: 24px;
+  }
+  .sidebar-user .avatar {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    font-weight: 700;
+    color: #ffffff;
+    box-shadow: 0 4px 8px var(--accent-glow);
+    flex-shrink: 0;
+  }
+  .sidebar-user-info {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+  .sidebar-user-info .greet-lbl {
+    font-size: 10px;
+    color: var(--text-secondary);
+  }
+  .sidebar-user-info .greet-name {
+    font-size: 13px;
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-top: 1px;
+  }
+  .sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+  }
+  .sidebar-nav .tab-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 10px 12px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    width: 100%;
+    text-align: left;
+    transition: all 0.2s ease;
+  }
+  .sidebar-nav .tab-btn svg {
+    width: 16px;
+    height: 16px;
+    transition: transform 0.2s ease;
+  }
+  .sidebar-nav .tab-btn:hover {
+    background: rgba(255, 255, 255, 0.03);
+    color: var(--text-primary);
+  }
+  .sidebar-nav .tab-btn:hover svg {
+    transform: translateX(2px);
+  }
+  .sidebar-nav .tab-btn.active {
+    background: var(--accent-glow);
+    color: var(--text-primary);
+    border: 1px solid rgba(16, 185, 129, 0.12);
+  }
+  .sidebar-footer {
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+  }
+  .sidebar-logout {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    padding: 10px;
+    border-radius: var(--radius-sm);
+    font-size: 12.5px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .sidebar-logout:hover {
+    background: rgba(239, 68, 68, 0.08);
+    color: var(--coral);
+    border-color: rgba(239, 68, 68, 0.2);
+  }
+
+  /* Desktop layout setup */
+  @media (min-width: 768px) {
+    #app {
+      flex-direction: row;
+    }
+    .sidebar-aside {
+      height: 100vh;
+      position: sticky;
+      top: 0;
+    }
+    .main-content-panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow-y: auto;
+      min-width: 0;
+    }
+  }
+
+  @media (max-width: 767px) {
+    .main-content-panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+    }
+  }
+
+  /* AUTH SCREEN */
+  #auth-screen {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 24px 20px;
+    gap: 24px;
+    width: 100%;
+    max-width: 380px;
+    margin: 0 auto;
+    min-height: 100vh;
+  }
+  .brand {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    text-align: center;
+  }
+  .brand .mark {
+    width: 56px;
+    height: 56px;
+    border-radius: 14px;
+    background: var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 8px 20px var(--accent-glow);
+  }
+  .brand .mark svg {
+    width: 24px;
+    height: 24px;
+  }
+  .brand h1 {
+    font-size: 24px;
+    font-weight: 800;
+    margin: 0;
+    letter-spacing: -0.03em;
+  }
+  .brand p {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 13px;
+  }
+  .auth-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 24px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    box-shadow: 0 16px 32px rgba(0, 0, 0, 0.4);
+  }
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .field label {
+    font-size: 10px;
+    color: var(--text-secondary);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    padding-left: 2px;
+  }
+  .field input {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    font-size: 13.5px;
+    padding: 10px 12px;
+    border-radius: var(--radius-sm);
+    outline: none;
+    font-family: inherit;
+    transition: all 0.2s ease;
+  }
+  .field input:focus {
+    border-color: var(--accent);
+    background: rgba(255, 255, 255, 0.04);
+    box-shadow: 0 0 0 3px var(--accent-glow);
+  }
+  .btn {
+    border: none;
+    border-radius: var(--radius-sm);
+    padding: 11px 14px;
+    font-size: 13.5px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+  .btn:active {
+    transform: scale(0.98);
+  }
+  .btn-primary {
+    background: var(--accent);
+    color: #ffffff;
+    box-shadow: 0 4px 12px var(--accent-glow);
+  }
+  .btn-primary:hover {
+    transform: translateY(-1.5px);
+    box-shadow: 0 8px 18px var(--accent-glow);
+    filter: brightness(1.1);
+  }
+  .btn-primary:active {
+    transform: translateY(0) scale(0.98);
+  }
+  .btn-primary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none !important;
+    box-shadow: none !important;
+  }
+  .btn-ghost {
+    background: transparent;
+    color: var(--text-secondary);
+    font-weight: 600;
+    font-size: 12.5px;
+  }
+  .btn-ghost:hover {
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.02);
+  }
+  #auth-error {
+    font-size: 12px;
+    text-align: center;
+    min-height: 16px;
+    line-height: 1.4;
+    font-weight: 500;
+  }
+
+  /* MOBILE TOPBAR */
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px 4px;
+  }
+  .topbar-title {
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: var(--text-primary);
+  }
+  @media (min-width: 768px) {
+    .topbar {
+      display: none !important; /* Hide mobile topbar on desktop */
+    }
+  }
+
+  .view {
+    display: none;
+    padding: 6px 14px calc(90px + var(--safe-bottom));
+    flex: 1;
+    overflow-y: auto;
+  }
+  .view.active {
+    display: block;
+    animation: fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* HERO CARD */
+  .hero {
+    margin: 8px 2px 18px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 18px 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.25);
+    --mouse-x: 50%;
+    --mouse-y: 50%;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle 140px at var(--mouse-x) var(--mouse-y), rgba(16, 185, 129, 0.06), transparent 85%);
+    pointer-events: none;
+    transition: background 0.2s ease;
+  }
+  .ring-wrap {
+    position: relative;
+    width: 90px;
+    height: 90px;
+    flex-shrink: 0;
+  }
+  .ring-wrap svg {
+    transform: rotate(-90deg);
+    width: 90px;
+    height: 90px;
+  }
+  .ring-bg {
+    fill: none;
+    stroke: rgba(255, 255, 255, 0.03);
+    stroke-width: 7;
+  }
+  .ring-fg {
+    fill: none;
+    stroke: url(#ringGrad);
+    stroke-width: 7;
+    stroke-linecap: round;
+    transition: stroke-dashoffset 0.9s cubic-bezier(0.34, 1.56, 0.64, 1);
+    filter: drop-shadow(0 0 3px rgba(16, 185, 129, 0.2));
+  }
+  .ring-center {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  .ring-center .pct {
+    font-size: 13.5px;
+    font-weight: 800;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--text-primary);
+  }
+  .ring-center .lbl {
+    font-size: 8px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    margin-top: 1px;
+  }
+  .hero-info {
+    flex: 1;
+    min-width: 0;
+  }
+  .hero-info .lbl {
+    font-size: 11px;
+    color: var(--text-secondary);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 2px;
+  }
+  .hero-info .amt {
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    font-family: 'JetBrains Mono', monospace;
+    margin-bottom: 4px;
+    color: #ffffff;
+  }
+  .hero-info .sub {
+    font-size: 11.5px;
+    color: var(--text-secondary);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 12px;
+  }
+  .hero-info .sub span {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+  }
+
+  .section-title {
+    font-size: 13.5px;
+    font-weight: 700;
+    margin: 18px 4px 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    letter-spacing: -0.01em;
+  }
+  .section-title span.dim {
+    font-size: 11.5px;
+    color: var(--text-secondary);
+    font-weight: 600;
+  }
+  
+  /* SEARCH BAR */
+  .search-bar-wrap {
+    position: relative;
+    margin: 10px 2px;
+  }
+  .search-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 14px;
+    height: 14px;
+    color: var(--text-dim);
+    pointer-events: none;
+  }
+  #tx-search-input {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    font-size: 13px;
+    padding: 9px 12px 9px 32px;
+    outline: none;
+    font-family: inherit;
+    transition: all 0.2s ease;
+  }
+  #tx-search-input:focus {
+    border-color: var(--accent);
+    background: rgba(255, 255, 255, 0.04);
+    box-shadow: 0 0 0 3px var(--accent-glow);
+  }
+
+  /* FILTER CHIPS */
+  .chip-row {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    padding: 2px 2px 6px;
+    margin-bottom: 8px;
+    scrollbar-width: none;
+  }
+  .chip-row::-webkit-scrollbar {
+    display: none;
+  }
+  .chip {
+    flex-shrink: 0;
+    padding: 7px 12px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border);
+    font-size: 11.5px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+  }
+  .chip:hover {
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--text-primary);
+    border-color: var(--border-hover);
+  }
+  .chip.active {
+    background: var(--text-primary);
+    color: var(--bg-main);
+    border-color: var(--text-primary);
+    box-shadow: 0 3px 8px rgba(255, 255, 255, 0.12);
+  }
+
+  /* TRANSACTION LIST */
+  .tx-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .tx-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    transition: background-color 0.2s, transform 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .tx-item:hover {
+    background: rgba(255, 255, 255, 0.02);
+    transform: translateX(2px);
+  }
+  .tx-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+  .tx-body {
+    flex: 1;
+    min-width: 0;
+  }
+  .tx-cat {
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .tx-date {
+    font-size: 11px;
+    color: var(--text-secondary);
+    margin-top: 2px;
+  }
+  .tx-amt {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    font-size: 13.5px;
+    flex-shrink: 0;
+    margin-right: 4px;
+    transition: margin-right 0.2s ease;
+  }
+  .tx-amt.expense {
+    color: var(--coral);
+  }
+  .tx-amt.income {
+    color: var(--mint);
+  }
+  .tx-delete-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-dim);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transform: translateX(10px);
+    transition: all 0.2s ease;
+    position: absolute;
+    right: 8px;
+  }
+  .tx-delete-btn:hover {
+    color: var(--coral);
+    background: var(--coral-glow);
+  }
+  .tx-item:hover .tx-delete-btn {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  .tx-item:hover .tx-amt {
+    margin-right: 28px;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-secondary);
+  }
+  .empty-state .glyph {
+    font-size: 30px;
+    margin-bottom: 10px;
+  }
+  .empty-state p {
+    font-size: 13px;
+    margin: 4px 0 0;
+  }
+
+  /* STATS VIEW */
+  .seg-control {
+    display: flex;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 3px;
+    margin: 6px 2px 14px;
+  }
+  .seg-control button {
+    flex: 1;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-family: inherit;
+    font-weight: 700;
+    font-size: 12px;
+    padding: 8px 0;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .seg-control button.active {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-primary);
+  }
+  .chart-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 18px 16px;
+    margin-bottom: 16px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.15);
+  }
+  .chart-card h3 {
+    margin: 0 0 3px;
+    font-size: 13.5px;
+    font-weight: 700;
+    padding-left: 2px;
+    letter-spacing: -0.01em;
+  }
+  .chart-card .ch-sub {
+    font-size: 11px;
+    color: var(--text-secondary);
+    padding-left: 2px;
+    margin-bottom: 14px;
+  }
+  .chart-container-rel {
+    position: relative;
+    width: 100%;
+  }
+  .legend-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 12px;
+    padding: 14px 2px 2px;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11.5px;
+    color: var(--text-secondary);
+  }
+  .legend-item b {
+    color: var(--text-primary);
+    font-weight: 700;
+  }
+
+  /* PROFILE VIEW */
+  .profile-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 24px 18px;
+    text-align: center;
+    margin: 8px 2px 16px;
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.25);
+  }
+  .avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    margin: 0 auto 12px;
+    background: var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    font-weight: 800;
+    color: #ffffff;
+    box-shadow: 0 6px 16px var(--accent-glow);
+  }
+  .stat-row {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 18px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+  }
+  .stat-row div {
+    text-align: center;
+  }
+  .stat-row .v {
+    font-size: 16px;
+    font-weight: 800;
+    font-family: 'JetBrains Mono', monospace;
+    color: #ffffff;
+  }
+  .stat-row .l {
+    font-size: 10px;
+    color: var(--text-secondary);
+    margin-top: 2px;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    font-weight: 600;
+  }
+  
+  #logout-btn-2 {
+    width: 100%;
+    background: rgba(239, 68, 68, 0.05);
+    color: var(--coral);
+    border: 1px solid rgba(239, 68, 68, 0.15);
+  }
+  #logout-btn-2:hover {
+    background: rgba(239, 68, 68, 0.1);
+    border-color: var(--coral);
+  }
+
+  /* FLOATING FAB (Both mobile and desktop layout) */
+  .fab-floating {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: none;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 6px 16px var(--accent-glow);
+    cursor: pointer;
+    z-index: 100;
+    transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease;
+  }
+  .fab-floating:hover {
+    transform: scale(1.08) rotate(90deg);
+    box-shadow: 0 8px 20px var(--accent-glow);
+  }
+  .fab-floating:active {
+    transform: scale(0.95);
+  }
+  .fab-floating svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  /* SHEET BACKDROP & DIALOGS */
+  .sheet-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: none;
+    z-index: 100;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+  .sheet-backdrop.show {
+    opacity: 1;
+  }
+
+  .sheet {
+    position: fixed;
+    z-index: 101;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+  }
+
+  /* Mobile bottom sheet */
+  @media (max-width: 767px) {
+    .sheet {
+      left: 0;
+      right: 0;
+      bottom: 0;
+      border-radius: 16px 16px 0 0;
+      border-bottom: none;
+      padding: 12px 18px calc(20px + var(--safe-bottom));
+      transform: translateY(100%);
+      transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .sheet.open {
+      transform: translateY(0);
+    }
+  }
+
+  /* Desktop centered modal */
+  @media (min-width: 768px) {
+    .sheet {
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -40%) scale(0.95);
+      width: 100%;
+      max-width: 400px;
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      opacity: 0;
+      pointer-events: none;
+      transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease;
+    }
+    .sheet.open {
+      transform: translate(-50%, -50%) scale(1);
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .sheet-handle {
+      display: none;
+    }
+  }
+
+  .sheet-handle {
+    width: 32px;
+    height: 4px;
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.08);
+    margin: 0 auto 14px;
+  }
+  .sheet h2 {
+    font-size: 17px;
+    margin: 0 0 14px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: #ffffff;
+  }
+  .type-toggle {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 14px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 3px;
+  }
+  .type-toggle button {
+    flex: 1;
+    padding: 8px;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--text-secondary);
+    font-weight: 700;
+    font-size: 12px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.2s ease;
+  }
+  .type-toggle button.active.expense {
+    background: rgba(239, 68, 68, 0.08);
+    color: var(--coral);
+    border-color: rgba(239, 68, 68, 0.15);
+  }
+  .type-toggle button.active.income {
+    background: var(--accent-glow);
+    color: var(--accent);
+    border-color: rgba(16, 185, 129, 0.15);
+  }
+  .amount-input-wrap {
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: 4px;
+    padding: 8px 0 12px;
+  }
+  .amount-input-wrap span {
+    font-size: 16px;
+    color: var(--text-secondary);
+    font-weight: 700;
+  }
+  .amount-input-wrap input {
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text-primary);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 32px;
+    font-weight: 700;
+    width: 100%;
+    max-width: 220px;
+    text-align: center;
+  }
+  .cat-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    margin: 8px 0 16px;
+    max-height: 190px;
+    overflow-y: auto;
+    padding-right: 4px;
+  }
+  .cat-grid::-webkit-scrollbar {
+    width: 4px;
+  }
+  .cat-grid::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .cat-grid::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 2px;
+  }
+  .cat-pill {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 10px 4px;
+    border-radius: var(--radius-md);
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--border);
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .cat-pill:hover {
+    background: rgba(255, 255, 255, 0.04);
+    transform: translateY(-1px);
+  }
+  .cat-pill .ic {
+    font-size: 18px;
+    transition: transform 0.2s ease;
+  }
+  .cat-pill:hover .ic {
+    transform: scale(1.1);
+  }
+  .cat-pill span {
+    font-size: 10px;
+    color: var(--text-secondary);
+    font-weight: 600;
+    text-align: center;
+  }
+  .cat-pill.selected {
+    border-color: var(--accent);
+    background: var(--accent-glow);
+  }
+  .cat-pill.selected span {
+    color: var(--text-primary);
+  }
+  .color-dot {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: transform 0.2s, border-color 0.2s;
+  }
+  .color-dot:hover {
+    transform: scale(1.15);
+  }
+  .color-dot.selected {
+    border-color: #ffffff;
+    transform: scale(1.1);
+    box-shadow: 0 0 8px var(--accent-glow);
+  }
+  .note-input {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 10px 12px;
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 13px;
+    outline: none;
+    margin-bottom: 16px;
+    transition: all 0.2s ease;
+  }
+  .note-input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-glow);
+    background: rgba(255, 255, 255, 0.04);
+  }
+
+  #toast {
+    position: fixed;
+    top: 18px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-100px);
+    background: #18181b;
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    padding: 10px 18px;
+    border-radius: var(--radius-md);
+    font-size: 12.5px;
+    font-weight: 600;
+    z-index: 200;
+    transition: transform .35s cubic-bezier(.32,.72,0,1);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  }
+  #toast.show {
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* RESPONSIVE LAYOUT Revamps for Desktop */
+  @media (min-width: 768px) {
+    .view {
+      padding: 18px 32px calc(32px + var(--safe-bottom));
+    }
+    
+    /* View Home Grid */
+    .view.active#view-home {
+      display: grid !important;
+      grid-template-columns: 1fr 1.3fr;
+      gap: 24px;
+      max-width: 1100px;
+    }
+    
+    .view-home-left {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .view-home-right {
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .hero {
+      position: sticky;
+      top: 18px;
+      margin: 0;
+      padding: 22px;
+    }
+    .ring-wrap {
+      width: 100px;
+      height: 100px;
+    }
+    .ring-wrap svg {
+      width: 100px;
+      height: 100px;
+    }
+    .hero-info .amt {
+      font-size: 24px;
+    }
+    
+    .section-title {
+      margin-top: 0;
+    }
+
+    /* View Stats Grid */
+    .view.active#view-stats {
+      display: flex !important;
+      flex-direction: column;
+      gap: 20px;
+      max-width: 1100px;
+    }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      width: 100%;
+    }
+    #stat-monthly, #stat-overall {
+      display: block !important;
+    }
+    .chart-card {
+      margin-bottom: 0;
+      height: 100%;
+    }
+    .seg-control {
+      display: none !important;
+    }
+
+    /* View Profile Layout */
+    .view.active#view-profile {
+      max-width: 520px;
+      margin: 32px auto 0;
+      width: 100%;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div class="glow-bg">
+  <div class="glow-sphere glow-1"></div>
+  <div class="glow-sphere glow-2"></div>
+</div>
+
+<div id="app">
+
+  <!-- AUTH SCREEN -->
+  <div id="auth-screen">
+    <div class="brand">
+      <div class="mark">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 12V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-3" />
+          <path d="M16 12h5" />
+          <circle cx="18" cy="12" r="1" fill="#ffffff" />
+        </svg>
+      </div>
+      <h1>Expense Tracker</h1>
+      <p>Track your expenses, beautifully.</p>
+    </div>
+    <div class="auth-card">
+      <div class="field">
+        <label for="auth-username">Username (Email)</label>
+        <input id="auth-username" type="text" autocomplete="username" placeholder="e.g. name@example.com" />
+      </div>
+      <div class="field">
+        <label for="auth-password">Password</label>
+        <input id="auth-password" type="password" autocomplete="current-password" placeholder="••••••••" />
+      </div>
+      <div id="auth-error"></div>
+      <button class="btn btn-primary" id="auth-submit-btn">Log In</button>
+      <button class="btn btn-ghost" id="auth-toggle-btn">Don't have an account? Sign up</button>
+    </div>
+  </div>
+
+  <!-- COLLAPSIBLE BACKDROP (Mobile sidebar) -->
+  <div class="sidebar-backdrop" id="sidebar-backdrop"></div>
+
+  <!-- DESKTOP / MOBILE COLLAPSIBLE SIDEBAR -->
+  <aside class="sidebar-aside" style="display: none;">
+    <div class="sidebar-brand">
+      <div class="mark">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 12V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-3" />
+          <path d="M16 12h5" />
+          <circle cx="18" cy="12" r="1" fill="#ffffff" />
+        </svg>
+      </div>
+      <h2>Expense Tracker</h2>
+    </div>
+    
+    <div class="sidebar-user">
+      <div class="avatar" id="sidebar-avatar-letter">U</div>
+      <div class="sidebar-user-info">
+        <span class="greet-lbl">Welcome back,</span>
+        <span class="greet-name" id="sidebar-greet-name">username</span>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <button class="tab-btn active" data-tab="home">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+        <span>Dashboard</span>
+      </button>
+      <button class="tab-btn" data-tab="stats">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="12" width="3" height="6"/><rect x="13" y="8" width="3" height="10"/></svg>
+        <span>Analytics</span>
+      </button>
+      <button class="tab-btn" data-tab="profile">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-7 8-7s8 3 8 7"/></svg>
+        <span>Profile</span>
+      </button>
+    </nav>
+
+    <div class="sidebar-footer">
+      <button class="sidebar-logout" id="sidebar-logout-btn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        <span>Log Out</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- MAIN VIEWPORT PANEL -->
+  <div class="main-content-panel" id="main-screen" style="display: none;">
+    
+    <!-- MOBILE TOPBAR -->
+    <div class="topbar">
+      <button class="icon-btn" id="menu-toggle-btn" title="Open Menu">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <span class="topbar-title">Expense Tracker</span>
+      <button class="icon-btn" id="logout-btn" title="Log out">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      </button>
+    </div>
+
+    <!-- HOME VIEW -->
+    <div class="view active" id="view-home">
+      
+      <div class="view-home-left">
+        <div class="hero">
+          <svg width="0" height="0"><defs><linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#ef4444"/><stop offset="100%" stop-color="#f97316"/></linearGradient></defs></svg>
+          <div class="ring-wrap">
+            <svg viewBox="0 0 108 108"><circle class="ring-bg" cx="54" cy="54" r="46"/><circle class="ring-fg" id="ring-fg" cx="54" cy="54" r="46" stroke-dasharray="289" stroke-dashoffset="289"/></svg>
+            <div class="ring-center"><div class="pct" id="ring-pct">Rs. 0</div><div class="lbl">spent</div></div>
+          </div>
+          <div class="hero-info">
+            <div class="lbl">This Month's Expenses</div>
+            <div class="amt mono" id="month-balance" style="color: var(--coral);">Rs. 0.00</div>
+            <div class="sub">
+              <span id="month-spending-summary">0 transactions tracked</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="view-home-right">
+        <div class="section-title">Recent activity <span class="dim" id="tx-count">0 entries</span></div>
+        
+        <!-- SEARCH FIELD -->
+        <div class="search-bar-wrap">
+          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" id="tx-search-input" placeholder="Search transactions..." />
+        </div>
+
+        <div class="chip-row" id="filter-chips"></div>
+        
+        <div class="tx-list" id="tx-list">
+          <div class="empty-state">
+            <div class="glyph">🪙</div>
+            <p>No transactions yet. Tap + to add one.</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- STATS VIEW -->
+    <div class="view" id="view-stats">
+      <div class="seg-control">
+        <button class="active" data-stat="monthly">Monthly Pie</button>
+        <button data-stat="overall">Overall Trend</button>
+      </div>
+      <div class="stats-grid">
+        <div id="stat-monthly">
+          <div class="chart-card">
+            <h3 id="pie-month-label">This Month</h3>
+            <div class="ch-sub">Spending by category</div>
+            <div class="chart-container-rel" style="height: 190px;">
+              <canvas id="pieChart"></canvas>
+            </div>
+            <div class="legend-grid" id="pie-legend"></div>
+          </div>
+        </div>
+        <div id="stat-overall" style="display:none">
+          <div class="chart-card">
+            <h3>Monthly Expenses</h3>
+            <div class="ch-sub">Last 12 months</div>
+            <div class="chart-container-rel" style="height: 190px;">
+              <canvas id="barChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PROFILE VIEW -->
+    <div class="view" id="view-profile">
+      <div class="profile-card">
+        <div class="avatar" id="avatar-letter">U</div>
+        <div style="font-size:16px;font-weight:800;letter-spacing:-0.01em;" id="profile-username">username</div>
+        <div style="font-size:12px;color:var(--text-secondary);margin-top:4px;">Member since <span id="profile-since">—</span></div>
+        <div class="stat-row">
+          <div><div class="v" id="profile-total-tx">0</div><div class="l">Expenses Tracked</div></div>
+          <div><div class="v" id="profile-net">Rs. 0</div><div class="l">All-time expenses</div></div>
+        </div>
+      </div>
+      <button class="btn" id="logout-btn-2">Log Out</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- FLOATING ACTION BUTTON (+) -->
+<button class="fab-floating" id="add-fab" title="Add Transaction">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+</button>
+
+<!-- ADD TRANSACTION SHEET/MODAL -->
+<div class="sheet-backdrop" id="sheet-backdrop"></div>
+<div class="sheet" id="add-sheet">
+  <div class="sheet-handle"></div>
+  <h2>Add Expense</h2>
+  <div class="amount-input-wrap">
+    <span>Rs.</span>
+    <input type="number" id="amount-input" inputmode="decimal" placeholder="0.00" step="0.01" />
+  </div>
+  <div class="cat-grid" id="cat-grid"></div>
+  <input type="text" class="note-input" id="note-input" placeholder="Add a note (optional)" />
+  <button class="btn btn-primary" id="save-tx-btn" style="width:100%;">Save Transaction</button>
+</div>
+
+<!-- ADD CATEGORY SHEET/MODAL -->
+<div class="sheet-backdrop" id="category-sheet-backdrop" style="z-index: 180;"></div>
+<div class="sheet" id="category-sheet" style="z-index: 181;">
+  <div class="sheet-handle"></div>
+  <h2>Create Category</h2>
+  <div class="field" style="margin-bottom: 12px;">
+    <label for="new-cat-label">Category Name</label>
+    <input type="text" id="new-cat-label" placeholder="e.g. Travel, Gifts" />
+  </div>
+  <div class="field" style="margin-bottom: 12px;">
+    <label for="new-cat-icon">Icon (Emoji)</label>
+    <input type="text" id="new-cat-icon" placeholder="✨" value="✨" maxlength="2" style="text-align: center; font-size: 20px; width: 60px;" />
+  </div>
+  <div class="field" style="margin-bottom: 16px;">
+    <label>Color</label>
+    <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px;" id="new-cat-colors"></div>
+  </div>
+  <div style="display: flex; gap: 10px;">
+    <button class="btn btn-ghost" id="cancel-cat-btn" style="flex: 1;">Cancel</button>
+    <button class="btn btn-primary" id="save-cat-btn" style="flex: 1;">Create</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+/* ===== CONFIG — Supabase project URL and anon key ===== */
+const SUPA_URL = "https://zsafcmbpisebbsclommy.supabase.co";
+const SUPA_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpzYWZjbWJwaXNlYmJzY2xvbW15Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMyMjYzNTAsImV4cCI6MjA5ODgwMjM1MH0.9ccvZdj0-azN88YZc7NpcHC1-tDHh0eeAKRf67MhqL4";
+
+/* ===== Supabase Client Initialization ===== */
+const db = window.supabase.createClient(SUPA_URL, SUPA_KEY);
+
+const DEFAULT_CATEGORIES = [
+  {id:"food",      label:"Food",       icon:"🍔", color:"#a1a1aa"},
+  {id:"transport", label:"Transport",  icon:"🚗", color:"#86efac"},
+  {id:"shopping",  label:"Shopping",   icon:"🛍️", color:"#d4d4d8"},
+  {id:"bills",     label:"Bills",      icon:"🧾", color:"#71717a"},
+  {id:"health",    label:"Health",     icon:"💊", color:"#10b981"},
+  {id:"fun",       label:"Fun",        icon:"🎬", color:"#e4e4e7"},
+  {id:"home",      label:"Home",       icon:"🏠", color:"#52525b"},
+  {id:"savings",   label:"Savings",    icon:"🏦", color:"#059669"},
+  {id:"other",     label:"Other",      icon:"✨", color:"#3f3f46"},
+];
+
+let CATEGORIES = [...DEFAULT_CATEGORIES];
+let catMap = Object.fromEntries(CATEGORIES.map(c=>[c.id,c]));
+
+function updateCategoryMap() {
+  catMap = Object.fromEntries(CATEGORIES.map(c=>[c.id,c]));
+}
+
+const PRESET_COLORS = ["#ef4444", "#3b82f6", "#10b981", "#f59e0b", "#8b5cf6", "#ec4899", "#06b6d4", "#f97316", "#6366f1", "#64748b"];
+
+function loadCustomCategories() {
+  CATEGORIES = [...DEFAULT_CATEGORIES];
+  if (session && session.user_id) {
+    try {
+      const stored = localStorage.getItem("ledger_custom_categories_" + session.user_id);
+      if (stored) {
+        const custom = JSON.parse(stored);
+        if (Array.isArray(custom)) {
+          const otherIdx = CATEGORIES.findIndex(c => c.id === "other");
+          if (otherIdx !== -1) {
+            CATEGORIES.splice(otherIdx, 0, ...custom);
+          } else {
+            CATEGORIES.push(...custom);
+          }
+        }
+      }
+    } catch (e) {
+      console.error("Error loading custom categories:", e);
+    }
+  }
+  updateCategoryMap();
+}
+
+function mergeSupabaseCategories(supabaseCats) {
+  let localCats = [];
+  try {
+    const stored = localStorage.getItem("ledger_custom_categories_" + session.user_id);
+    if (stored) {
+      localCats = JSON.parse(stored);
+    }
+  } catch (e) {}
+  
+  const combined = [...localCats];
+  supabaseCats.forEach(sCat => {
+    const exists = combined.some(lCat => lCat.id === sCat.id);
+    if (!exists) {
+      combined.push(sCat);
+    }
+  });
+  
+  localStorage.setItem("ledger_custom_categories_" + session.user_id, JSON.stringify(combined));
+  loadCustomCategories();
+}
+
+function buildColorPicker() {
+  const container = $("#new-cat-colors");
+  if (!container) return;
+  container.innerHTML = "";
+  PRESET_COLORS.forEach((color, idx) => {
+    const dot = document.createElement("div");
+    dot.className = "color-dot" + (idx === 0 ? " selected" : "");
+    dot.style.backgroundColor = color;
+    dot.dataset.color = color;
+    container.appendChild(dot);
+  });
+  
+  container.addEventListener("click", e => {
+    const dot = e.target.closest(".color-dot");
+    if (!dot) return;
+    $$(".color-dot").forEach(d => d.classList.remove("selected"));
+    dot.classList.add("selected");
+  });
+}
+
+function resolveUnknownCategories() {
+  allTx.forEach(t => {
+    if (t.category && !catMap[t.category]) {
+      let label = t.category;
+      if (label.startsWith("cat_")) {
+        label = "Custom";
+      } else {
+        label = label.charAt(0).toUpperCase() + label.slice(1);
+      }
+      catMap[t.category] = {
+        id: t.category,
+        label: label,
+        icon: "✨",
+        color: "#3f3f46"
+      };
+    }
+  });
+}
+
+/* ===== STATE ===== */
+let session = null;   // { user_id, username, joined_at }
+let allTx = [];
+let selectedCategory = null;
+let currentType = "expense";
+let activeFilter = "all";
+let searchQuery = "";
+let pieChart = null, barChart = null;
+let authMode = "login";
+
+/* ===== HELPERS ===== */
+const $ = s => document.querySelector(s);
+const $$ = s => document.querySelectorAll(s);
+const fmt  = n => "Rs. " + Number(n).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+const fmtS = n => "Rs. " + Number(n).toLocaleString(undefined,{maximumFractionDigits:0});
+
+async function sha256(str){
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,"0")).join("");
+}
+
+function showToast(msg){
+  const t = $("#toast"); t.textContent = msg;
+  t.classList.add("show"); setTimeout(()=>t.classList.remove("show"), 2400);
+}
+function showErr(msg, color="var(--coral)"){
+  const el = $("#auth-error");
+  el.textContent = msg; el.style.color = color;
+}
+
+/* ===== SESSION ===== */
+function saveSession(s){ localStorage.setItem("ledger_session", JSON.stringify(s)); }
+function loadSession(){ try{ return JSON.parse(localStorage.getItem("ledger_session")); }catch(e){ return null; } }
+function clearSession(){ localStorage.removeItem("ledger_session"); }
+
+/* ===== AUTH TOGGLE ===== */
+$("#auth-toggle-btn").addEventListener("click", ()=>{
+  authMode = authMode === "login" ? "signup" : "login";
+  $("#auth-submit-btn").textContent = authMode === "login" ? "Log In" : "Sign Up";
+  $("#auth-toggle-btn").textContent = authMode === "login" ? "Don't have an account? Sign up" : "Already have an account? Log in";
+  showErr("");
+});
+
+/* ===== AUTH SUBMIT ===== */
+$("#auth-submit-btn").addEventListener("click", async () => {
+  const username = $("#auth-username").value.trim();
+  const password = $("#auth-password").value;
+  showErr("");
+
+  if(!username){ showErr("Enter your username."); return; }
+  if(username.length < 3){ showErr("Username must be at least 3 characters."); return; }
+  if(!password || password.length < 6){ showErr("Password must be at least 6 characters."); return; }
+
+  const btn = $("#auth-submit-btn");
+  btn.disabled = true;
+  btn.textContent = "Please wait...";
+
+  try {
+    const hash = await sha256(password);
+
+    if(authMode === "signup") {
+      // Check username taken
+      const { data: existing } = await db
+        .from("app_users")
+        .select("id")
+        .eq("username", username)
+        .maybeSingle();
+
+      if(existing){ showErr("Username already taken — choose another."); return; }
+
+      // Create user
+      const { data: newUser, error: insertErr } = await db
+        .from("app_users")
+        .insert({ username, password_hash: hash })
+        .select("id, username, created_at")
+        .single();
+
+      if(insertErr){ showErr("Sign up failed: " + insertErr.message); return; }
+
+      session = { user_id: newUser.id, username: newUser.username, joined_at: newUser.created_at };
+      saveSession(session);
+      showToast("Welcome to Ledger! 🎉");
+      enterApp();
+
+    } else {
+      // Login
+      const { data: user, error: loginErr } = await db
+        .from("app_users")
+        .select("id, username, created_at")
+        .eq("username", username)
+        .eq("password_hash", hash)
+        .maybeSingle();
+
+      if(loginErr){ showErr("Login error: " + loginErr.message); return; }
+      if(!user){ showErr("Incorrect username or password."); return; }
+
+      session = { user_id: user.id, username: user.username, joined_at: user.created_at };
+      saveSession(session);
+      enterApp();
+    }
+  } catch(err) {
+    showErr("Unexpected error: " + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = authMode === "login" ? "Log In" : "Sign Up";
+  }
+});
+
+/* ===== ENTER APP ===== */
+async function enterApp(){
+  $("#auth-screen").style.display = "none";
+  $("#main-screen").style.display = "";
+  $(".sidebar-aside").style.display = "";
+  
+  // Set greetings
+  $("#sidebar-greet-name").textContent = session.username;
+  $("#profile-username").textContent = "@" + session.username;
+  
+  // Set avatar letters
+  $("#avatar-letter").textContent = session.username[0].toUpperCase();
+  $("#sidebar-avatar-letter").textContent = session.username[0].toUpperCase();
+  
+  const joined = session.joined_at ? new Date(session.joined_at) : new Date();
+  $("#profile-since").textContent = joined.toLocaleDateString(undefined,{month:"short",year:"numeric"});
+  
+  // Load user's custom categories
+  loadCustomCategories();
+  buildColorPicker();
+  
+  searchQuery = "";
+  $("#tx-search-input").value = "";
+  
+  buildFilterChips();
+  buildCategoryGrid();
+  await loadTransactions();
+}
+
+function logout(){
+  clearSession();
+  session = null; allTx = [];
+  CATEGORIES = [...DEFAULT_CATEGORIES];
+  updateCategoryMap();
+  $("#main-screen").style.display = "none";
+  $("#auth-screen").style.display = "flex";
+  $("#auth-username").value = ""; $("#auth-password").value = "";
+  closeSidebar();
+  showErr("");
+}
+
+$("#logout-btn").addEventListener("click", logout);
+$("#logout-btn-2").addEventListener("click", logout);
+$("#sidebar-logout-btn").addEventListener("click", logout);
+
+/* ===== TRANSACTIONS ===== */
+async function loadTransactions(){
+  const { data, error } = await db
+    .from("transactions")
+    .select("*")
+    .eq("user_id", session.user_id)
+    .order("created_at", {ascending: false});
+  if(error){ showToast("Load error: " + error.message); return; }
+  
+  const rawTx = data || [];
+  const txItems = [];
+  const supabaseCustomCategories = [];
+  
+  rawTx.forEach(t => {
+    if (t.category === "sys_category" && t.note) {
+      try {
+        const cat = JSON.parse(t.note);
+        if (cat && cat.id && cat.label) {
+          supabaseCustomCategories.push(cat);
+        }
+      } catch(e) {
+        console.error("Failed to parse custom category:", e);
+      }
+    } else {
+      txItems.push(t);
+    }
+  });
+  
+  allTx = txItems;
+  mergeSupabaseCategories(supabaseCustomCategories);
+  resolveUnknownCategories();
+  renderAll();
+}
+
+async function addTransaction(){
+  const amount = parseFloat($("#amount-input").value);
+  if(!amount || amount <= 0){ showToast("Enter a valid amount"); return; }
+  if(!selectedCategory){ showToast("Pick a category"); return; }
+  const note = $("#note-input").value.trim();
+  const btn = $("#save-tx-btn");
+  btn.disabled = true; btn.textContent = "Saving...";
+  const { data, error } = await db
+    .from("transactions")
+    .insert({ user_id: session.user_id, category: selectedCategory, amount, type: "expense", note: note||null })
+    .select().single();
+  btn.disabled = false; btn.textContent = "Save Transaction";
+  if(error){ showToast("Save failed: " + error.message); return; }
+  allTx.unshift(data);
+  renderAll();
+  closeSheet();
+  showToast("Transaction saved ✓");
+}
+
+/* ===== RENDER ===== */
+function thisMonthTx(){
+  const now = new Date();
+  return allTx.filter(t=>{ const d=new Date(t.created_at); return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear(); });
+}
+
+function renderAll(){ renderHero(); renderTxList(); renderPieChart(); renderBarChart(); renderProfileStats(); }
+
+function renderHero(){
+  const m = thisMonthTx();
+  const expense = m.reduce((s,t)=>s+Number(t.amount),0);
+  
+  $("#month-balance").textContent = fmt(expense);
+  $("#month-balance").style.color = "var(--coral)";
+  
+  // Spending summary
+  $("#month-spending-summary").textContent = m.length + (m.length === 1 ? " expense tracked" : " expenses tracked");
+  
+  // Update ring indicator based on a target Rs. 50,000 budget
+  const budget = 50000;
+  const pct = Math.min(expense / budget, 1);
+  $("#ring-fg").style.strokeDashoffset = 289 - pct*289;
+  $("#ring-pct").textContent = fmtS(expense);
+}
+
+function buildFilterChips(){
+  const wrap = $("#filter-chips"); wrap.innerHTML = "";
+  const all = document.createElement("div");
+  all.className="chip active"; all.textContent="All"; all.dataset.f="all";
+  wrap.appendChild(all);
+  CATEGORIES.forEach(c=>{ const ch=document.createElement("div"); ch.className="chip"; ch.innerHTML=`<span>${c.icon}</span> ${c.label}`; ch.dataset.f=c.id; wrap.appendChild(ch); });
+  wrap.addEventListener("click",e=>{ 
+    const chip=e.target.closest(".chip"); 
+    if(!chip)return; 
+    $$(".chip").forEach(c=>c.classList.remove("active")); 
+    chip.classList.add("active"); 
+    activeFilter=chip.dataset.f; 
+    renderTxList(); 
+  });
+}
+
+function renderTxList(){
+  const list=$("#tx-list"), count=$("#tx-count");
+  
+  // Category Filter
+  let filtered = activeFilter==="all" ? allTx : allTx.filter(t=>t.category===activeFilter);
+  
+  // Search Filter
+  if (searchQuery) {
+    const q = searchQuery.toLowerCase();
+    filtered = filtered.filter(t => {
+      const cat = catMap[t.category] || catMap.other;
+      const noteMatch = t.note && t.note.toLowerCase().includes(q);
+      const catMatch = cat.label.toLowerCase().includes(q);
+      const amountMatch = t.amount.toString().includes(q);
+      return noteMatch || catMatch || amountMatch;
+    });
+  }
+
+  count.textContent = filtered.length+(filtered.length===1?" entry":" entries");
+  if(!filtered.length){ 
+    list.innerHTML=`<div class="empty-state"><div class="glyph">🔍</div><p>No matching transactions found.</p></div>`; 
+    return; 
+  }
+  
+  list.innerHTML = filtered.slice(0,60).map(t=>{
+    const cat=catMap[t.category]||catMap.other;
+    const d=new Date(t.created_at);
+    const ds=d.toLocaleDateString(undefined,{month:"short",day:"numeric"});
+    return `<div class="tx-item" data-id="${t.id}">
+      <div class="tx-icon" style="background:${cat.color}15;color:${cat.color}">${cat.icon}</div>
+      <div class="tx-body"><div class="tx-cat">${t.note||cat.label}</div><div class="tx-date">${cat.label} · ${ds}</div></div>
+      <div class="tx-amt ${t.type}">${t.type==="expense"?"-":"+"}${fmt(t.amount)}</div>
+      <button class="tx-delete-btn" title="Delete transaction">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+      </button>
+    </div>`;
+  }).join("");
+
+  // Attach Deletion Event Handlers
+  list.querySelectorAll(".tx-delete-btn").forEach(btn => {
+    btn.addEventListener("click", async (e) => {
+      e.stopPropagation();
+      const txItem = btn.closest(".tx-item");
+      const id = txItem.dataset.id;
+      if (!confirm("Are you sure you want to delete this transaction?")) return;
+      
+      btn.disabled = true;
+      try {
+        const { error } = await db.from("transactions").delete().eq("id", id);
+        if (error) {
+          showToast("Delete failed: " + error.message);
+          btn.disabled = false;
+          return;
+        }
+        allTx = allTx.filter(t => t.id !== id);
+        renderAll();
+        showToast("Transaction deleted ✓");
+      } catch (err) {
+        showToast("Error: " + err.message);
+        btn.disabled = false;
+      }
+    });
+  });
+}
+
+function renderPieChart(){
+  const monthExp = thisMonthTx().filter(t=>t.type==="expense");
+  $("#pie-month-label").textContent = new Date().toLocaleDateString(undefined,{month:"long",year:"numeric"});
+  
+  const byCat={};
+  monthExp.forEach(t=>{ byCat[t.category]=(byCat[t.category]||0)+Number(t.amount); });
+  const labels=Object.keys(byCat), values=Object.values(byCat);
+  const colors=labels.map(l=>(catMap[l]||catMap.other).color);
+  
+  const legend=$("#pie-legend");
+  legend.innerHTML = labels.length
+    ? labels.map((l,i)=>{ const c=catMap[l]||catMap.other; return `<div class="legend-item"><span class="dot" style="width:8px;height:8px;border-radius:50%;background:${c.color}"></span>${c.label} <b>${fmtS(values[i])}</b></div>`; }).join("")
+    : `<div style="color:var(--text-secondary);font-size:12px;padding:8px;">No expenses this month yet.</div>`;
+  
+  if(pieChart) pieChart.destroy();
+  
+  const hasData = values.length > 0;
+  const chartData = hasData ? values : [1];
+  const chartColors = hasData ? colors : ["rgba(255, 255, 255, 0.04)"];
+
+  pieChart = new Chart($("#pieChart").getContext("2d"),{
+    type:"doughnut",
+    data:{
+      labels:labels.map(l=>(catMap[l]||catMap.other).label),
+      datasets:[{
+        data:chartData,
+        backgroundColor:chartColors,
+        borderWidth:0,
+        hoverOffset:hasData ? 6 : 0
+      }]
+    },
+    options:{
+      cutout:"76%",
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins:{
+        legend:{display:false},
+        tooltip:{
+          enabled:hasData,
+          backgroundColor: "#1c1c1f",
+          titleFont: {family: "'Plus Jakarta Sans', sans-serif", size: 11, weight: 'bold'},
+          bodyFont: {family: "'Plus Jakarta Sans', sans-serif", size: 11},
+          padding: 8,
+          cornerRadius: 6,
+          borderColor: "rgba(255, 255, 255, 0.08)",
+          borderWidth: 1,
+          callbacks:{label:c=>` ${fmt(c.raw)}`}
+        }
+      },
+      animation:{duration:800}
+    }
+  });
+}
+
+function renderBarChart(){
+  const now=new Date();
+  const months=[];
+  for(let i=11;i>=0;i--){ 
+    const d=new Date(now.getFullYear(),now.getMonth()-i,1); 
+    months.push({key:d.getFullYear()+"-"+d.getMonth(),label:d.toLocaleDateString(undefined,{month:"short"})}); 
+  }
+  const exp=months.map(()=>0);
+  allTx.forEach(t=>{ 
+    const d=new Date(t.created_at); 
+    const key=d.getFullYear()+"-"+d.getMonth(); 
+    const idx=months.findIndex(m=>m.key===key); 
+    if(idx===-1)return; 
+    exp[idx]+=Number(t.amount); 
+  });
+  
+  if(barChart) barChart.destroy();
+  barChart = new Chart($("#barChart").getContext("2d"),{
+    type:"bar",
+    data:{
+      labels:months.map(m=>m.label),
+      datasets:[
+        {
+          label:"Expenses",
+          data:exp,
+          backgroundColor:"#ef4444",
+          borderRadius:3,
+          maxBarThickness:12
+        }
+      ]
+    },
+    options:{
+      responsive:true,
+      maintainAspectRatio: false,
+      animation:{duration:800},
+      scales:{
+        x:{
+          grid:{display:false},
+          ticks:{color:"#94a3b8",font:{family: "'Plus Jakarta Sans', sans-serif", size:10}}
+        },
+        y:{
+          grid:{color:"rgba(255,255,255,0.03)"},
+          ticks:{
+            color:"#94a3b8",
+            font:{family: "'Plus Jakarta Sans', sans-serif", size:10},
+            callback:v=>"Rs. "+v
+          }
+        }
+      },
+      plugins:{
+        legend:{
+          labels:{
+            color:"#f8fafc",
+            boxWidth:8,
+            boxHeight:8,
+            usePointStyle: true,
+            font:{family: "'Plus Jakarta Sans', sans-serif", size:10.5, weight: '600'}
+          }
+        },
+        tooltip: {
+          backgroundColor: "#1c1c1f",
+          titleFont: {family: "'Plus Jakarta Sans', sans-serif", size: 11, weight: 'bold'},
+          bodyFont: {family: "'Plus Jakarta Sans', sans-serif", size: 11},
+          padding: 8,
+          cornerRadius: 6,
+          borderColor: "rgba(255, 255, 255, 0.08)",
+          borderWidth: 1,
+          callbacks:{label:c=>` ${c.dataset.label}: ${fmt(c.raw)}`}
+        }
+      }
+    }
+  });
+}
+
+function renderProfileStats(){
+  $("#profile-total-tx").textContent = allTx.length;
+  const totalExpenses = allTx.reduce((s,t)=>s+Number(t.amount),0);
+  $("#profile-net").textContent = fmtS(totalExpenses);
+  $("#profile-net").style.color = "var(--coral)";
+}
+
+/* ===== TABS & NAVIGATION SYNC ===== */
+$$(".tab-btn").forEach(btn=>btn.addEventListener("click",()=>{
+  const tab = btn.dataset.tab;
+  
+  // Sync tab active states on navigation
+  $$(`.tab-btn[data-tab="${tab}"]`).forEach(b=>b.classList.add("active"));
+  $$(`.tab-btn:not([data-tab="${tab}"])`).forEach(b=>b.classList.remove("active"));
+  
+  // Switch view displays
+  $$(".view").forEach(v=>{
+    if(v.id === "view-"+tab) {
+      v.style.display = "";
+      v.offsetHeight; // Trigger reflow for animations
+      v.classList.add("active");
+    } else {
+      v.classList.remove("active");
+      v.style.display = "none";
+    }
+  });
+  
+  // Close mobile sidebar menu if it was clicked
+  if (window.innerWidth < 768) {
+    closeSidebar();
+  }
+}));
+
+// Manage overall trend tab toggling on mobile
+$$(".seg-control button").forEach(btn=>btn.addEventListener("click",()=>{
+  $$(".seg-control button").forEach(b=>b.classList.remove("active")); btn.classList.add("active");
+  const m=btn.dataset.stat==="monthly";
+  $("#stat-monthly").style.display=m?"block":"none";
+  $("#stat-overall").style.display=m?"none":"block";
+}));
+
+/* ===== SEARCH TRANSACTION ===== */
+$("#tx-search-input").addEventListener("input", (e) => {
+  searchQuery = e.target.value;
+  renderTxList();
+});
+
+/* ===== ADD TRANSACTION SHEET/MODAL ===== */
+function buildCategoryGrid(){
+  const grid=$("#cat-grid"); grid.innerHTML="";
+  CATEGORIES.forEach(c=>{ const el=document.createElement("div"); el.className="cat-pill"; el.dataset.cat=c.id; el.innerHTML=`<span class="ic">${c.icon}</span><span>${c.label}</span>`; grid.appendChild(el); });
+  
+  // Add category pill
+  const addPill = document.createElement("div");
+  addPill.className = "cat-pill add-custom-pill";
+  addPill.style.borderStyle = "dashed";
+  addPill.style.borderColor = "var(--accent)";
+  addPill.innerHTML = `<span class="ic" style="color:var(--accent)">➕</span><span style="color:var(--accent)">Add custom</span>`;
+  grid.appendChild(addPill);
+}
+
+// Attach category selection listener
+$("#cat-grid").addEventListener("click", e => {
+  const pill = e.target.closest(".cat-pill");
+  if (!pill) return;
+  if (pill.classList.contains("add-custom-pill")) {
+    openCategorySheet();
+    return;
+  }
+  $$(".cat-pill").forEach(p => p.classList.remove("selected"));
+  pill.classList.add("selected");
+  selectedCategory = pill.dataset.cat;
+});
+
+function openCategorySheet(){
+  $("#new-cat-label").value = "";
+  $("#new-cat-icon").value = "✨";
+  
+  const firstDot = $("#new-cat-colors .color-dot");
+  if (firstDot) {
+    $$(".color-dot").forEach(d => d.classList.remove("selected"));
+    firstDot.classList.add("selected");
+  }
+  
+  const backdrop = $("#category-sheet-backdrop");
+  backdrop.style.display = "block";
+  backdrop.offsetHeight; // force reflow
+  backdrop.classList.add("show");
+  $("#category-sheet").classList.add("open");
+}
+
+function closeCategorySheet(){
+  $("#category-sheet").classList.remove("open");
+  const backdrop = $("#category-sheet-backdrop");
+  backdrop.classList.remove("show");
+  setTimeout(()=>{
+    if(!$("#category-sheet").classList.contains("open")) {
+      backdrop.style.display="none";
+    }
+  }, 300);
+}
+
+async function saveCustomCategory(){
+  const label = $("#new-cat-label").value.trim();
+  const icon = $("#new-cat-icon").value.trim() || "✨";
+  const selectedDot = $("#new-cat-colors .color-dot.selected");
+  const color = selectedDot ? selectedDot.dataset.color : PRESET_COLORS[0];
+  
+  if (!label) {
+    showToast("Enter a category name");
+    return;
+  }
+  
+  const exists = CATEGORIES.some(c => c.label.toLowerCase() === label.toLowerCase());
+  if (exists) {
+    showToast("Category already exists");
+    return;
+  }
+  
+  const id = "cat_" + Date.now();
+  const newCat = { id, label, icon, color };
+  
+  const btn = $("#save-cat-btn");
+  btn.disabled = true;
+  btn.textContent = "Creating...";
+  
+  try {
+    const { error } = await db
+      .from("transactions")
+      .insert({
+        user_id: session.user_id,
+        category: "sys_category",
+        amount: 0.01,
+        type: "expense",
+        note: JSON.stringify(newCat)
+      });
+      
+    if (error) {
+      showToast("Supabase sync failed: " + error.message);
+      btn.disabled = false;
+      btn.textContent = "Create";
+      return;
+    }
+    
+    let custom = [];
+    try {
+      const stored = localStorage.getItem("ledger_custom_categories_" + session.user_id);
+      if (stored) {
+        custom = JSON.parse(stored);
+      }
+    } catch (e) {}
+    
+    custom.push(newCat);
+    localStorage.setItem("ledger_custom_categories_" + session.user_id, JSON.stringify(custom));
+    
+    loadCustomCategories();
+    buildCategoryGrid();
+    
+    selectedCategory = id;
+    const newPill = $(`.cat-pill[data-cat="${id}"]`);
+    if (newPill) {
+      $$(".cat-pill").forEach(p => p.classList.remove("selected"));
+      newPill.classList.add("selected");
+    }
+    
+    buildFilterChips();
+    closeCategorySheet();
+    showToast("Category created ✓");
+  } catch (err) {
+    showToast("Error: " + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Create";
+  }
+}
+
+$("#cancel-cat-btn").addEventListener("click", closeCategorySheet);
+$("#category-sheet-backdrop").addEventListener("click", closeCategorySheet);
+$("#save-cat-btn").addEventListener("click", saveCustomCategory);
+
+function openSheet(){ 
+  const backdrop = $("#sheet-backdrop");
+  backdrop.style.display = "block"; 
+  backdrop.offsetHeight; // force reflow
+  backdrop.classList.add("show");
+  $("#add-sheet").classList.add("open"); 
+}
+
+function closeSheet(){ 
+  $("#add-sheet").classList.remove("open"); 
+  const backdrop = $("#sheet-backdrop");
+  backdrop.classList.remove("show");
+  setTimeout(()=>{
+    if(!$("#add-sheet").classList.contains("open")) {
+      backdrop.style.display="none";
+    }
+  }, 300); 
+  $("#amount-input").value=""; 
+  $("#note-input").value=""; 
+  $$(".cat-pill").forEach(p=>p.classList.remove("selected")); 
+  selectedCategory=null; 
+  setType("expense"); 
+}
+
+$("#add-fab").addEventListener("click", openSheet);
+$("#sheet-backdrop").addEventListener("click", closeSheet);
+$("#save-tx-btn").addEventListener("click", addTransaction);
+
+function setType(t){ currentType=t; }
+
+/* ===== GLASS CARD INTERACTIVITY ===== */
+const heroCard = document.querySelector(".hero");
+if (heroCard) {
+  heroCard.addEventListener("mousemove", (e) => {
+    const rect = heroCard.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    heroCard.style.setProperty("--mouse-x", `${x}px`);
+    heroCard.style.setProperty("--mouse-y", `${y}px`);
+  });
+}
+
+/* ===== COLLAPSIBLE SIDEBAR TOGGLES (MOBILE) ===== */
+const menuToggleBtn = $("#menu-toggle-btn");
+const sidebarAside = $(".sidebar-aside");
+const sidebarBackdrop = $("#sidebar-backdrop");
+
+if (menuToggleBtn) {
+  menuToggleBtn.addEventListener("click", () => {
+    sidebarAside.classList.add("open");
+    sidebarBackdrop.classList.add("show");
+  });
+}
+
+if (sidebarBackdrop) {
+  sidebarBackdrop.addEventListener("click", closeSidebar);
+}
+
+function closeSidebar() {
+  sidebarAside.classList.remove("open");
+  sidebarBackdrop.classList.remove("show");
+}
+
+/* ===== RESIZE EVENT HANDLING ===== */
+window.addEventListener("resize", () => {
+  if (session && session.user_id) {
+    if (window.innerWidth >= 768) {
+      closeSidebar();
+      const activeView = $(".view.active");
+      if (activeView && activeView.id === "view-home") {
+        activeView.style.display = "";
+      }
+    }
+  }
+});
+
+/* ===== INIT SESSION ===== */
+const saved = loadSession();
+if(saved && saved.user_id){ 
+  session=saved; 
+  enterApp(); 
+} else {
+  $("#auth-screen").style.display = "flex";
+  $("#main-screen").style.display = "none";
+  $(".sidebar-aside").style.display = "none";
+}
+</script>
+</body>
+</html>
