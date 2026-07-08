@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, viewport-fit=cover" />
+<title>SpendWise — Personal Finance Tracker</title>
+<meta name="description" content="Track your expenses beautifully with SpendWise." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/app.css" />
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+<div class="glow-bg">
+  <div class="glow-sphere glow-1"></div>
+  <div class="glow-sphere glow-2"></div>
+</div>
+
+<div id="app">
+
+  <!-- ════════════ AUTH SCREEN ════════════ -->
+  <div id="auth-screen" style="display:none;">
+    <a href="index.html" class="auth-back-btn" id="back-to-landing">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+      Back to home
+    </a>
+
+    <div class="brand">
+      <div class="mark">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 12V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-3" />
+          <path d="M16 12h5" /><circle cx="18" cy="12" r="1" fill="#ffffff" />
+        </svg>
+      </div>
+      <h1>SpendWise</h1>
+      <p>Track your expenses, beautifully.</p>
+    </div>
+
+    <div class="auth-card">
+      <div class="field">
+        <label for="auth-username">Username</label>
+        <input id="auth-username" type="text" autocomplete="username" placeholder="e.g. name@example.com" />
+      </div>
+      <div class="field">
+        <label for="auth-password">Password</label>
+        <input id="auth-password" type="password" autocomplete="current-password" placeholder="••••••••" />
+      </div>
+      <div id="auth-error"></div>
+      <button class="btn btn-primary" id="auth-submit-btn" style="width:100%;">Log In</button>
+      <button class="btn btn-ghost" id="auth-toggle-btn">Don't have an account? Sign up</button>
+    </div>
+  </div>
+
+  <!-- ════════════ SIDEBAR ════════════ -->
+  <div class="sidebar-backdrop" id="sidebar-backdrop"></div>
+
+  <aside class="sidebar-aside" style="display: none;">
+    <div class="sidebar-brand">
+      <div class="mark">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 12V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-3"/>
+          <path d="M16 12h5"/><circle cx="18" cy="12" r="1" fill="#ffffff"/>
+        </svg>
+      </div>
+      <h2>SpendWise</h2>
+    </div>
+
+    <div class="sidebar-user">
+      <div class="avatar" id="sidebar-avatar-letter">U</div>
+      <div class="sidebar-user-info">
+        <span class="greet-lbl">Welcome back,</span>
+        <span class="greet-name" id="sidebar-greet-name">username</span>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <button class="tab-btn active" data-tab="home">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+        <span>Dashboard</span>
+      </button>
+      <button class="tab-btn" data-tab="stats">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="12" width="3" height="6"/><rect x="13" y="8" width="3" height="10"/></svg>
+        <span>Analytics</span>
+      </button>
+      <button class="tab-btn" data-tab="profile">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-7 8-7s8 3 8 7"/></svg>
+        <span>Profile</span>
+      </button>
+    </nav>
+
+    <div class="sidebar-footer">
+      <button class="sidebar-logout" id="sidebar-logout-btn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        <span>Log Out</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- ════════════ MAIN PANEL ════════════ -->
+  <div class="main-content-panel" id="main-screen" style="display: none;">
+
+    <!-- Mobile Topbar -->
+    <div class="topbar">
+      <button class="icon-btn" id="menu-toggle-btn" title="Open Menu">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <span class="topbar-title">SpendWise</span>
+      <button class="icon-btn" id="logout-btn" title="Log out">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      </button>
+    </div>
+
+    <!-- HOME VIEW -->
+    <div class="view active" id="view-home">
+      <div class="view-home-left">
+        <div class="hero">
+          <svg width="0" height="0"><defs><linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#ef4444"/><stop offset="100%" stop-color="#f97316"/></linearGradient></defs></svg>
+          <div class="ring-wrap">
+            <svg viewBox="0 0 108 108"><circle class="ring-bg" cx="54" cy="54" r="46"/><circle class="ring-fg" id="ring-fg" cx="54" cy="54" r="46" stroke-dasharray="289" stroke-dashoffset="289"/></svg>
+            <div class="ring-center"><div class="pct mono" id="ring-pct">Rs. 0</div><div class="lbl">spent</div></div>
+          </div>
+          <div class="hero-info">
+            <div class="lbl">This Month's Expenses</div>
+            <div class="amt mono" id="month-balance" style="color: var(--coral);">Rs. 0.00</div>
+            <div class="sub">
+              <span id="month-spending-summary">0 transactions tracked</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="view-home-right">
+        <div class="section-title">Recent activity <span class="dim" id="tx-count">0 entries</span></div>
+
+        <div class="search-bar-wrap">
+          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" id="tx-search-input" placeholder="Search transactions..." />
+        </div>
+
+        <div class="chip-row" id="filter-chips"></div>
+
+        <div class="tx-list" id="tx-list">
+          <div class="empty-state">
+            <div class="glyph">🪙</div>
+            <p>No transactions yet. Tap + to add one.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STATS VIEW -->
+    <div class="view" id="view-stats">
+      <div class="seg-control">
+        <button class="active" data-stat="monthly">Monthly Pie</button>
+        <button data-stat="overall">Overall Trend</button>
+      </div>
+      <div class="stats-grid">
+        <div id="stat-monthly">
+          <div class="chart-card">
+            <h3 id="pie-month-label">This Month</h3>
+            <div class="ch-sub">Spending by category</div>
+            <div class="chart-container-rel" style="height: 190px;">
+              <canvas id="pieChart"></canvas>
+            </div>
+            <div class="legend-grid" id="pie-legend"></div>
+          </div>
+        </div>
+        <div id="stat-overall" style="display:none">
+          <div class="chart-card">
+            <h3>Monthly Expenses</h3>
+            <div class="ch-sub">Last 12 months</div>
+            <div class="chart-container-rel" style="height: 190px;">
+              <canvas id="barChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PROFILE VIEW -->
+    <div class="view" id="view-profile">
+      <div class="profile-card">
+        <div class="avatar" id="avatar-letter">U</div>
+        <div style="font-size:17px;font-weight:800;letter-spacing:-0.01em;" id="profile-username">username</div>
+        <div style="font-size:12px;color:var(--text-secondary);margin-top:4px;">Member since <span id="profile-since">—</span></div>
+        <div class="stat-row">
+          <div><div class="v" id="profile-total-tx">0</div><div class="l">Expenses Tracked</div></div>
+          <div><div class="v" id="profile-net">Rs. 0</div><div class="l">All-time expenses</div></div>
+        </div>
+      </div>
+      <button class="btn" id="logout-btn-2">Log Out</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ════════════ FAB ════════════ -->
+<!-- Hidden by default — shown only when authenticated via JS -->
+<button class="fab-floating" id="add-fab" title="Add Transaction">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+</button>
+
+<!-- ════════════ ADD TRANSACTION SHEET ════════════ -->
+<div class="sheet-backdrop" id="sheet-backdrop"></div>
+<div class="sheet" id="add-sheet">
+  <div class="sheet-handle"></div>
+  <h2>Add Expense</h2>
+  <div class="amount-input-wrap">
+    <span>Rs.</span>
+    <input type="number" id="amount-input" inputmode="decimal" placeholder="0.00" step="0.01" />
+  </div>
+  <div class="cat-grid" id="cat-grid"></div>
+  <input type="text" class="note-input" id="note-input" placeholder="Add a note (optional)" />
+  <button class="btn btn-primary" id="save-tx-btn" style="width:100%;">Save Transaction</button>
+</div>
+
+<!-- ════════════ ADD CATEGORY SHEET ════════════ -->
+<div class="sheet-backdrop" id="category-sheet-backdrop" style="z-index: 180;"></div>
+<div class="sheet" id="category-sheet" style="z-index: 181;">
+  <div class="sheet-handle"></div>
+  <h2>Create Category</h2>
+  <div class="field" style="margin-bottom: 12px;">
+    <label for="new-cat-label">Category Name</label>
+    <input type="text" id="new-cat-label" placeholder="e.g. Travel, Gifts" />
+  </div>
+  <div class="field" style="margin-bottom: 12px;">
+    <label for="new-cat-icon">Icon (Emoji)</label>
+    <input type="text" id="new-cat-icon" placeholder="✨" value="✨" maxlength="2" style="text-align: center; font-size: 20px; width: 60px;" />
+  </div>
+  <div class="field" style="margin-bottom: 16px;">
+    <label>Color</label>
+    <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px;" id="new-cat-colors"></div>
+  </div>
+  <div style="display: flex; gap: 10px;">
+    <button class="btn btn-ghost" id="cancel-cat-btn" style="flex: 1;">Cancel</button>
+    <button class="btn btn-primary" id="save-cat-btn" style="flex: 1;">Create</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script src="js/app.js"></script>
+
+<script>
+  /* Read URL param to pre-select auth mode */
+  (function() {
+    const params = new URLSearchParams(window.location.search);
+    const mode = params.get('mode');
+    if (mode === 'signup') {
+      // Wait for DOM + app.js to load
+      window.addEventListener('DOMContentLoaded', () => {}, false);
+      document.addEventListener('DOMContentLoaded', () => {
+        const submitBtn = document.getElementById('auth-submit-btn');
+        const toggleBtn = document.getElementById('auth-toggle-btn');
+        if (submitBtn && toggleBtn) {
+          // Simulate a toggle click to switch to signup mode
+          toggleBtn.click();
+        }
+      });
+    }
+  })();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SpendWise — Smart Personal Finance Tracker</title>
+<meta name="description" content="Take control of your money with SpendWise. Track expenses, visualize spending, and build better financial habits — all in one beautiful app." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/landing.css" />
+</head>
+<body>
+
+<!-- Particle canvas -->
+<canvas id="bg-canvas"></canvas>
+
+<!-- ════════════ NAV ════════════ -->
+<nav id="main-nav">
+  <a href="index.html" class="nav-brand">
+    <div class="nav-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 12V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-3"/>
+        <path d="M16 12h5"/><circle cx="18" cy="12" r="1" fill="#fff"/>
+      </svg>
+    </div>
+    <span class="nav-name">SpendWise</span>
+  </a>
+  <div class="nav-links">
+    <a href="#features">Features</a>
+    <a href="#how-it-works">How it works</a>
+    <a href="app.html?mode=login">Sign In</a>
+    <a href="app.html?mode=signup" class="btn-nav-cta">Get Started</a>
+  </div>
+</nav>
+
+<!-- ════════════ HERO ════════════ -->
+<section class="hero-section">
+  <!-- Ambient blobs -->
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+  <div class="blob blob-3"></div>
+
+  <div class="hero-badge">
+    <span class="badge-dot"></span>
+    Smart Expense Tracking
+  </div>
+
+  <h1 class="hero-title">
+    Your money,<br>
+    <span class="gradient-text">beautifully</span> tracked.
+  </h1>
+
+  <p class="hero-sub">
+    Stop guessing where your money goes. SpendWise gives you a crystal-clear view of your spending with stunning charts, smart categories, and real-time insights — right in your pocket.
+  </p>
+
+  <div class="hero-cta">
+    <a href="app.html?mode=signup" class="btn-primary" id="cta-signup-hero">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+      Get Started Free
+    </a>
+    <a href="app.html?mode=login" class="btn-secondary" id="cta-login-hero">
+      Sign In
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+    </a>
+  </div>
+
+  <!-- 3D Phone Mockup -->
+  <div class="mockup-scene">
+    <div class="mockup-wrapper">
+      <!-- Floating badges -->
+      <div class="float-badge fb-1">
+        <div class="fb-icon" style="background:rgba(16,185,129,0.15)">💰</div>
+        <div class="fb-text">
+          <span class="fb-label">Saved this month</span>
+          <span class="fb-val" style="color:#10b981">+Rs. 12,400</span>
+        </div>
+      </div>
+      <div class="float-badge fb-2">
+        <div class="fb-icon" style="background:rgba(239,68,68,0.15)">📊</div>
+        <div class="fb-text">
+          <span class="fb-label">Monthly budget</span>
+          <span class="fb-val" style="color:#f59e0b">72% used</span>
+        </div>
+      </div>
+      <div class="float-badge fb-3">
+        <div class="fb-icon" style="background:rgba(139,92,246,0.15)">✅</div>
+        <div class="fb-text">
+          <span class="fb-label">Streak</span>
+          <span class="fb-val" style="color:#8b5cf6">14 days</span>
+        </div>
+      </div>
+
+      <!-- Phone -->
+      <div class="mock-phone">
+        <div class="mock-screen">
+          <div class="mock-notch"></div>
+          <div class="mock-status">
+            <span>9:41</span>
+            <span>●●● 100%</span>
+          </div>
+          <div class="mock-topbar">
+            <span class="mock-topbar-title">SpendWise</span>
+            <div class="mock-avatar">A</div>
+          </div>
+          <div class="mock-balance-card">
+            <div class="mock-balance-lbl">This Month's Expenses</div>
+            <div class="mock-balance-amt">Rs. 36,200</div>
+            <div class="mock-balance-row">
+              <span><span class="mock-dot" style="background:#10b981"></span>24 expenses</span>
+              <span><span class="mock-dot" style="background:#ef4444"></span>72% of budget</span>
+            </div>
+          </div>
+          <div class="mock-section-title">Recent Activity</div>
+          <div class="mock-tx">
+            <div class="mock-tx-icon" style="background:rgba(161,161,170,0.15)">🍔</div>
+            <div class="mock-tx-info">
+              <div class="mock-tx-name">Lunch at Cafe</div>
+              <div class="mock-tx-date">Food · Today</div>
+            </div>
+            <div class="mock-tx-amt">-Rs. 450</div>
+          </div>
+          <div class="mock-tx">
+            <div class="mock-tx-icon" style="background:rgba(134,239,172,0.15)">🚗</div>
+            <div class="mock-tx-info">
+              <div class="mock-tx-name">Uber ride</div>
+              <div class="mock-tx-date">Transport · Yesterday</div>
+            </div>
+            <div class="mock-tx-amt">-Rs. 280</div>
+          </div>
+          <div class="mock-tx">
+            <div class="mock-tx-icon" style="background:rgba(212,212,216,0.15)">🛍️</div>
+            <div class="mock-tx-info">
+              <div class="mock-tx-name">H&M purchase</div>
+              <div class="mock-tx-date">Shopping · Jul 6</div>
+            </div>
+            <div class="mock-tx-amt">-Rs. 3,200</div>
+          </div>
+          <div style="height:16px;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════ STATS BAR ════════════ -->
+<div class="stats-bar">
+  <div class="stat-item reveal">
+    <span class="stat-num" data-target="5000">0</span>
+    <span class="stat-label">Users tracking expenses</span>
+  </div>
+  <div class="stat-item reveal">
+    <span class="stat-num" data-target="120">0</span>
+    <span class="stat-label">Thousand transactions logged</span>
+  </div>
+  <div class="stat-item reveal">
+    <span class="stat-num" data-target="98">0</span>
+    <span class="stat-label">% user satisfaction</span>
+  </div>
+  <div class="stat-item reveal">
+    <span class="stat-num" data-target="9">0</span>
+    <span class="stat-label">Smart categories built-in</span>
+  </div>
+</div>
+
+<!-- ════════════ FEATURES ════════════ -->
+<section class="features-section" id="features">
+  <p class="section-label reveal">Everything you need</p>
+  <h2 class="section-title reveal">
+    Finance tracking,<br><span class="gradient-text">done right</span>
+  </h2>
+  <p class="section-sub reveal">Powerful features wrapped in a beautiful, intuitive interface designed for real people — not accountants.</p>
+
+  <div class="features-grid">
+    <div class="feat-card reveal">
+      <div class="feat-icon-wrap ic-green">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 20V10M18 20V4M6 20v-4"/>
+        </svg>
+      </div>
+      <div class="feat-title">Real-time Analytics</div>
+      <p class="feat-desc">Beautiful charts and graphs that show exactly where every rupee goes. Monthly trends, category breakdowns — all at a glance.</p>
+    </div>
+
+    <div class="feat-card reveal">
+      <div class="feat-icon-wrap ic-purple">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/>
+        </svg>
+      </div>
+      <div class="feat-title">Smart Categories</div>
+      <p class="feat-desc">9 built-in categories with emoji icons, plus unlimited custom categories with personalized colors. Organize your spending your way.</p>
+    </div>
+
+    <div class="feat-card reveal">
+      <div class="feat-icon-wrap ic-blue">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+      </div>
+      <div class="feat-title">Instant Search</div>
+      <p class="feat-desc">Find any transaction in milliseconds. Search by category, amount, notes, or date — with lightning-fast filtering chips.</p>
+    </div>
+
+    <div class="feat-card reveal">
+      <div class="feat-icon-wrap ic-gold">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        </svg>
+      </div>
+      <div class="feat-title">Secure & Private</div>
+      <p class="feat-desc">Your financial data is protected with SHA-256 password hashing and Supabase's enterprise-grade security. Your data stays yours.</p>
+    </div>
+
+    <div class="feat-card reveal">
+      <div class="feat-icon-wrap ic-coral">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/>
+        </svg>
+      </div>
+      <div class="feat-title">Mobile-First Design</div>
+      <p class="feat-desc">Designed for your phone from day one. Smooth animations, swipeable sheets, and intuitive gestures make tracking effortless on the go.</p>
+    </div>
+
+    <div class="feat-card reveal">
+      <div class="feat-icon-wrap ic-teal">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+        </svg>
+      </div>
+      <div class="feat-title">Budget Tracking</div>
+      <p class="feat-desc">Visual budget ring shows you how much you've spent vs your Rs. 50,000 monthly target. Stay on track, always.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════ HOW IT WORKS ════════════ -->
+<section class="how-section" id="how-it-works">
+  <p class="section-label reveal">Simple & fast</p>
+  <h2 class="section-title reveal">Up and running<br><span class="gradient-text-purple">in 30 seconds</span></h2>
+  <p class="section-sub reveal">No setup headaches, no complicated onboarding. Just sign up and start tracking.</p>
+
+  <div class="steps">
+    <div class="step">
+      <div class="step-num sn-1">01</div>
+      <div class="step-content">
+        <div class="step-title">Create your free account</div>
+        <p class="step-desc">Sign up with just a username and password — no email verification, no credit card. Your account is ready in seconds.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num sn-2">02</div>
+      <div class="step-content">
+        <div class="step-title">Add your first expense</div>
+        <p class="step-desc">Tap the + button, enter an amount, pick a category, and optionally add a note. Done in under 5 seconds — we timed it.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num sn-3">03</div>
+      <div class="step-content">
+        <div class="step-title">Watch insights appear</div>
+        <p class="step-desc">As you log expenses, beautiful charts and trends appear automatically. Understand your spending patterns and take control.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════ CTA ════════════ -->
+<section class="cta-section">
+  <div class="cta-card reveal">
+    <span class="cta-emoji">💸</span>
+    <h2 class="cta-title">Ready to take control<br>of your <span class="gradient-text">finances?</span></h2>
+    <p class="cta-sub">Join thousands of users who've already transformed their relationship with money. It's free, it's beautiful, and it works.</p>
+    <div class="cta-btns">
+      <a href="app.html?mode=signup" class="btn-primary" id="cta-signup-bottom">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+        Get Started Free
+      </a>
+      <a href="app.html?mode=login" class="btn-secondary" id="cta-login-bottom">Already have an account?</a>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════ FOOTER ════════════ -->
+<footer>
+  <div class="footer-brand">
+    <div class="nav-logo" style="width:28px;height:28px;border-radius:8px;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;">
+        <path d="M21 12V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-3"/>
+        <path d="M16 12h5"/><circle cx="18" cy="12" r="1" fill="#fff"/>
+      </svg>
+    </div>
+    SpendWise — Personal Finance Tracker
+  </div>
+  <span class="footer-copy">© 2026 SpendWise. Built with ❤️</span>
+</footer>
+
+<script>
+/* ═══════════════════════════════════════
+   PARTICLE CANVAS BACKGROUND
+═══════════════════════════════════════ */
+(function() {
+  const canvas = document.getElementById('bg-canvas');
+  const ctx    = canvas.getContext('2d');
+  let W, H, particles = [], lines = [];
+
+  function resize() {
+    W = canvas.width  = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+  }
+
+  function Particle() {
+    this.x  = Math.random() * W;
+    this.y  = Math.random() * H;
+    this.vx = (Math.random() - 0.5) * 0.3;
+    this.vy = (Math.random() - 0.5) * 0.3;
+    this.r  = Math.random() * 1.5 + 0.5;
+    this.alpha = Math.random() * 0.5 + 0.15;
+    this.color = Math.random() > 0.6 ? '16,185,129' : '139,92,246';
+  }
+
+  Particle.prototype.update = function() {
+    this.x += this.vx; this.y += this.vy;
+    if (this.x < 0) this.x = W;
+    if (this.x > W) this.x = 0;
+    if (this.y < 0) this.y = H;
+    if (this.y > H) this.y = 0;
+  };
+
+  function init() {
+    resize();
+    particles = Array.from({length: 80}, () => new Particle());
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+
+    // Connect nearby particles
+    for (let i = 0; i < particles.length; i++) {
+      for (let j = i + 1; j < particles.length; j++) {
+        const p = particles[i], q = particles[j];
+        const dx = p.x - q.x, dy = p.y - q.y;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        if (dist < 120) {
+          ctx.beginPath();
+          ctx.strokeStyle = `rgba(16,185,129,${0.06 * (1 - dist/120)})`;
+          ctx.lineWidth = 0.5;
+          ctx.moveTo(p.x, p.y);
+          ctx.lineTo(q.x, q.y);
+          ctx.stroke();
+        }
+      }
+    }
+
+    // Draw particles
+    particles.forEach(p => {
+      p.update();
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(${p.color},${p.alpha})`;
+      ctx.fill();
+    });
+
+    requestAnimationFrame(draw);
+  }
+
+  window.addEventListener('resize', resize);
+  init();
+  draw();
+})();
+
+/* ═══════════════════════════════════════
+   NAV SCROLL EFFECT
+═══════════════════════════════════════ */
+window.addEventListener('scroll', () => {
+  document.getElementById('main-nav').classList.toggle('scrolled', window.scrollY > 40);
+});
+
+/* ═══════════════════════════════════════
+   SCROLL REVEAL
+═══════════════════════════════════════ */
+const revealObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible');
+      revealObserver.unobserve(entry.target);
+    }
+  });
+}, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+
+document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
+
+/* Steps reveal */
+const stepObserver = new IntersectionObserver((entries) => {
+  entries.forEach((entry, i) => {
+    if (entry.isIntersecting) {
+      setTimeout(() => entry.target.classList.add('visible'), i * 150);
+      stepObserver.unobserve(entry.target);
+    }
+  });
+}, { threshold: 0.1 });
+
+document.querySelectorAll('.step').forEach(el => stepObserver.observe(el));
+
+/* ═══════════════════════════════════════
+   ANIMATED COUNTERS
+═══════════════════════════════════════ */
+const countObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      const el     = entry.target;
+      const target = parseInt(el.dataset.target, 10);
+      const suffix = el.dataset.suffix || '';
+      let current  = 0;
+      const step   = target / 60;
+      const timer  = setInterval(() => {
+        current += step;
+        if (current >= target) {
+          current = target;
+          clearInterval(timer);
+        }
+        el.textContent = Math.floor(current).toLocaleString() + suffix;
+      }, 18);
+      countObserver.unobserve(el);
+    }
+  });
+}, { threshold: 0.5 });
+
+document.querySelectorAll('.stat-num[data-target]').forEach(el => countObserver.observe(el));
+
+/* ═══════════════════════════════════════
+   3D PARALLAX ON MOCKUP (mouse move)
+═══════════════════════════════════════ */
+const wrapper = document.querySelector('.mockup-wrapper');
+if (wrapper) {
+  document.addEventListener('mousemove', (e) => {
+    const cx = window.innerWidth  / 2;
+    const cy = window.innerHeight / 2;
+    const dx = (e.clientX - cx) / cx;
+    const dy = (e.clientY - cy) / cy;
+    wrapper.style.transform = `rotateX(${8 - dy*6}deg) rotateY(${dx*8}deg) translateY(-8px)`;
+  });
+  document.addEventListener('mouseleave', () => {
+    wrapper.style.transform = '';
+  });
+}
+</script>
+</body>
+</html>
