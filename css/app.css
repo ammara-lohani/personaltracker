@@ -454,6 +454,30 @@ html, body {
   }
 }
 
+.dash-brand-title-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+.dash-brand-logo {
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+  background: linear-gradient(135deg, var(--accent), #059669);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 16px var(--accent-glow);
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+.dash-brand-logo:hover {
+  transform: scale(1.05);
+}
+.dash-brand-title-row .dash-title {
+  margin-bottom: 0;
+}
 .dash-title {
   font-size: 24px;
   font-weight: 800;
@@ -1540,6 +1564,22 @@ html, body {
   font-weight: 800;
   letter-spacing: -0.02em;
   color: #fff;
+  margin: 0;
+}
+.modal-title-with-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.modal-logo-badge {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
 }
 .close-sheet-btn {
   background: none;

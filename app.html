@@ -8,6 +8,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="icon" type="image/svg+xml" href="favicon.svg" />
+<link rel="alternate icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' fill='none'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='32' y2='32' gradientUnits='userSpaceOnUse'%3E%3Cstop stop-color='%2310b981'/%3E%3Cstop offset='100%25' stop-color='%23059669'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='32' height='32' rx='9' fill='url(%23g)'/%3E%3Cg transform='translate(4, 4)'%3E%3Cpath d='M21 12V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-3' stroke='%23ffffff' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M16 12h5' stroke='%23ffffff' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='18' cy='12' r='1.2' fill='%23ffffff'/%3E%3C/g%3E%3C/svg%3E" />
+<link rel="apple-touch-icon" href="favicon.svg" />
 <link rel="stylesheet" href="css/app.css" />
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
@@ -128,7 +131,15 @@
       <!-- Top Greetings & Actions Banner -->
       <div class="dash-header">
         <div class="dash-greeting-block">
-          <h1 class="dash-title">Financial Overview</h1>
+          <div class="dash-brand-title-row">
+            <div class="dash-brand-logo" title="SpendWise">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 12V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-3"/>
+                <path d="M16 12h5"/><circle cx="18" cy="12" r="1" fill="#fff"/>
+              </svg>
+            </div>
+            <h1 class="dash-title">Financial Overview</h1>
+          </div>
           <p class="dash-sub">Monitor your expenses and category distribution in real time.</p>
         </div>
         <div class="dash-actions">
@@ -279,8 +290,15 @@
       
       <!-- Analytics Header with Prominent Month Selector -->
       <div class="analytics-header">
-        <div>
-          <h1 class="dash-title">Spending Analytics & Graphs</h1>
+        <div class="dash-greeting-block">
+          <div class="dash-brand-title-row">
+            <div class="dash-brand-logo" style="background: linear-gradient(135deg, #3b82f6, #2563eb); box-shadow: 0 4px 14px rgba(59,130,246,0.35);" title="Analytics">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 3v18h18"/><rect x="7" y="12" width="3" height="6"/><rect x="13" y="8" width="3" height="10"/>
+              </svg>
+            </div>
+            <h1 class="dash-title">Spending Analytics & Graphs</h1>
+          </div>
           <p class="dash-sub">Deep dive into previous and current month spending trends and category breakdowns.</p>
         </div>
 
@@ -381,8 +399,15 @@
     <main class="view" id="view-categories">
       
       <div class="dash-header">
-        <div>
-          <h1 class="dash-title">Category Management</h1>
+        <div class="dash-greeting-block">
+          <div class="dash-brand-title-row">
+            <div class="dash-brand-logo" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed); box-shadow: 0 4px 14px rgba(139,92,246,0.35);" title="Categories">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 6h16M4 12h16M4 18h7"/><circle cx="18" cy="18" r="3"/><path d="M18 16v4m-2-2h4"/>
+              </svg>
+            </div>
+            <h1 class="dash-title">Category Management</h1>
+          </div>
           <p class="dash-sub">Create, edit, or customize spending categories to match your lifestyle.</p>
         </div>
         <button class="btn btn-primary" id="btn-create-cat">
@@ -401,6 +426,20 @@
 
     <!-- ════════════ VIEW: PROFILE ════════════ -->
     <main class="view" id="view-profile">
+      <div class="dash-header" style="margin-bottom: 24px;">
+        <div class="dash-greeting-block">
+          <div class="dash-brand-title-row">
+            <div class="dash-brand-logo" style="background: linear-gradient(135deg, #10b981, #059669); box-shadow: 0 4px 14px var(--accent-glow);" title="Profile">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-7 8-7s8 3 8 7"/>
+              </svg>
+            </div>
+            <h1 class="dash-title">Account Profile</h1>
+          </div>
+          <p class="dash-sub">View your account overview, membership details, and session status.</p>
+        </div>
+      </div>
+
       <div class="profile-card">
         <div class="avatar" id="avatar-letter">U</div>
         <div class="profile-username" id="profile-username">username</div>
@@ -446,7 +485,12 @@
 <div class="sheet" id="add-sheet" role="dialog" aria-labelledby="add-expense-heading">
   <div class="sheet-handle"></div>
   <div class="sheet-header-row">
-    <h2 id="add-expense-heading">Add Expense</h2>
+    <div class="modal-title-with-logo">
+      <div class="modal-logo-badge" style="background: linear-gradient(135deg, #10b981, #059669);">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+      </div>
+      <h2 id="add-expense-heading">Add Expense</h2>
+    </div>
     <button class="close-sheet-btn" id="close-add-sheet-btn" title="Close" aria-label="Close dialog">✕</button>
   </div>
 
@@ -482,7 +526,12 @@
 <div class="sheet" id="edit-sheet" role="dialog" aria-labelledby="edit-expense-heading">
   <div class="sheet-handle"></div>
   <div class="sheet-header-row">
-    <h2 id="edit-expense-heading">Edit Expense</h2>
+    <div class="modal-title-with-logo">
+      <div class="modal-logo-badge" style="background: linear-gradient(135deg, #3b82f6, #2563eb);">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      </div>
+      <h2 id="edit-expense-heading">Edit Expense</h2>
+    </div>
     <button class="close-sheet-btn" id="close-edit-sheet-btn" title="Close" aria-label="Close dialog">✕</button>
   </div>
 
@@ -519,7 +568,12 @@
 <div class="sheet" id="category-sheet" style="z-index: 181;" role="dialog" aria-labelledby="cat-modal-title">
   <div class="sheet-handle"></div>
   <div class="sheet-header-row">
-    <h2 id="cat-modal-title">Create Category</h2>
+    <div class="modal-title-with-logo">
+      <div class="modal-logo-badge" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed);">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h7"/><circle cx="18" cy="18" r="3"/><path d="M18 16v4m-2-2h4"/></svg>
+      </div>
+      <h2 id="cat-modal-title">Create Category</h2>
+    </div>
     <button class="close-sheet-btn" id="close-cat-sheet-btn" title="Close" aria-label="Close dialog">✕</button>
   </div>
 
